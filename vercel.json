@@ -10,6 +10,42 @@
       "destination": "/api/gemini/generate.ts"
     },
     {
+      "source": "/api/gemini/polish",
+      "destination": "/api/gemini/polish.ts"
+    },
+    {
+      "source": "/api/gemini/command",
+      "destination": "/api/gemini/command.ts"
+    },
+    {
+      "source": "/api/drive/screenshots/:fileId",
+      "destination": "/api/drive/screenshots.ts?fileId=$1"
+    },
+    {
+      "source": "/api/drive/screenshots",
+      "destination": "/api/drive/screenshots.ts"
+    },
+    {
+      "source": "/api/drive/zivai-sync",
+      "destination": "/api/drive/zivai-sync.ts"
+    },
+    {
+      "source": "/api/drive/list",
+      "destination": "/api/drive/list.ts"
+    },
+    {
+      "source": "/api/drive/upload",
+      "destination": "/api/drive/upload.ts"
+    },
+    {
+      "source": "/api/drive/file/:fileId",
+      "destination": "/api/drive/file.ts?fileId=$1"
+    },
+    {
+      "source": "/api/data",
+      "destination": "/api/data.ts"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
