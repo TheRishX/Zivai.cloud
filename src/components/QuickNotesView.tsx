@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Sparkles, Plus, Trash2, Search, Pin, Star, Mic, MicOff, Check, CornerDownRight, ListFilter, Calendar,
+  Sparkles, Plus, Trash2, Search, Pin, Star, Check, CornerDownRight, ListFilter, Calendar,
   Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, 
   CheckSquare, Palette, Eraser, Type, ChevronDown, Maximize2, Minimize2, ChevronsUp, ChevronsDown
 } from 'lucide-react';
@@ -38,7 +38,6 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
   const [isPolishingNote, setIsPolishingNote] = useState(false);
   const [showAiDropdown, setShowAiDropdown] = useState(false);
   const [showAiTray, setShowAiTray] = useState(false);
-  const [voiceErrorMessage, setVoiceErrorMessage] = useState<string | null>(null);
   const [aiCommand, setAiCommand] = useState('');
   const [isExecutingCommand, setIsExecutingCommand] = useState(false);
   const [isToolbarMinimized, setIsToolbarMinimized] = useState(false);
@@ -64,13 +63,7 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
     { label: 'Lilac Accent', value: '#e9d5ff', bgClass: 'bg-purple-200' },
   ];
 
-  // Speech Recognition state
-  const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<any>(null);
-
-  const SpeechRecognitionClass = typeof window !== 'undefined' 
-    ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) 
-    : null;
+  // Speech Recognition removed
 
   const handleUpdateNoteField = (id: string, field: keyof QuickNoteItem, value: any) => {
     const updatedNotes = quickNotes.map(n => {
@@ -157,104 +150,7 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
     dbStateRef.current = dbState;
   }, [dbState]);
 
-  useEffect(() => {
-    if (SpeechRecognitionClass) {
-      const rec = new SpeechRecognitionClass();
-      rec.continuous = true;
-      rec.interimResults = false;
-      rec.lang = 'en-US';
-
-      rec.onstart = () => {
-        setIsListening(true);
-      };
-
-      rec.onend = () => {
-        setIsListening(false);
-      };
-
-      rec.onerror = (event: any) => {
-        console.error("Speech recognition error:", event.error);
-        setIsListening(false);
-      };
-
-      rec.onresult = (event: any) => {
-        const results = event.results;
-        const lastResultIndex = event.resultIndex;
-        const transcript = Array.from(results)
-          .slice(lastResultIndex)
-          .map((result: any) => result[0])
-          .map((result: any) => result.transcript)
-          .join('');
-        
-        const activeId = selectedNoteIdRef.current;
-        if (transcript && activeId) {
-          if (editorRef.current) {
-            editorRef.current.focus();
-            const textNode = document.createTextNode(' ' + transcript);
-            const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0) {
-              const range = sel.getRangeAt(0);
-              range.insertNode(textNode);
-              range.setStartAfter(textNode);
-              range.collapse(true);
-              sel.removeAllRanges();
-              sel.addRange(range);
-            } else {
-              editorRef.current.appendChild(textNode);
-            }
-            
-            // Re-simulate input save for document update
-            const htmlValue = editorRef.current.innerHTML;
-            const currentNotes = dbStateRef.current.quickNotes || [];
-            const currentNote = currentNotes.find(n => n.id === activeId);
-            const rawText = editorRef.current.innerText || '';
-            const lines = rawText.trim().split('\n');
-            const firstLine = lines[0] ? lines[0].substring(0, 40) : '';
-            const isUntitled = !currentNote || !currentNote.title || currentNote.title.startsWith('Untitled Note') || currentNote.title.trim() === '';
-            const updatedTitle = isUntitled ? (firstLine || 'Untitled Note') : currentNote.title;
-
-            const updatedNotes = currentNotes.map(n => {
-              if (n.id === activeId) {
-                return {
-                  ...n,
-                  title: updatedTitle,
-                  content: htmlValue,
-                  updatedAt: new Date().toISOString()
-                };
-              }
-              return n;
-            });
-            onUpdateDb({ quickNotes: updatedNotes });
-            
-            setTimeout(scrollCursorIntoView, 10);
-          }
-        }
-      };
-
-      setRecognition(rec);
-    }
-  }, []);
-
-  const toggleListening = () => {
-    if (!recognition) {
-      setVoiceErrorMessage("Mic speech recognition is restricted or not supported in this frame. Open the app in a new tab to enable standard voice typing!");
-      setTimeout(() => setVoiceErrorMessage(null), 7000);
-      return;
-    }
-
-    if (isListening) {
-      recognition.stop();
-    } else {
-      try {
-        setVoiceErrorMessage(null);
-        recognition.start();
-      } catch (err) {
-        console.error("Failed to start speech recognition:", err);
-        setVoiceErrorMessage("Could not start microphone session. Verify permission settings.");
-        setTimeout(() => setVoiceErrorMessage(null), 4005);
-      }
-    }
-  };
+  // Speech Recognition hook removed
 
   const execEditorCommand = (command: string, value: string = '') => {
     document.execCommand(command, false, value);
@@ -580,9 +476,6 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
   };
 
   const handleDeleteNote = (id: string) => {
-    if (isListening) {
-      recognition.stop();
-    }
     const updatedNotes = quickNotes.filter(n => n.id !== id);
     onUpdateDb({ quickNotes: updatedNotes });
     
@@ -652,7 +545,7 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
             UNIVERSAL QUICK NOTES
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Separate client-side memory ledger styled after Apple Notes. Features cloud save and voice typing.
+            Separate client-side memory ledger styled after Apple Notes. Features instant cloud save integration.
           </p>
         </div>
 
@@ -771,7 +664,6 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
                     key={note.id}
                     type="button"
                     onClick={() => {
-                      if (isListening) recognition.stop();
                       setSelectedNoteId(note.id);
                     }}
                     className={`w-full p-4 text-left transition-all relative flex flex-col gap-2 cursor-pointer border-l-4 ${
@@ -896,18 +788,8 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
                   </div>
                 </div>
 
-                {/* Right utility elements (Microphone / hands-free mode + Trash) */}
+                {/* Right utility elements (AI Assistant + Actions) */}
                 <div className="flex items-center gap-2 relative">
-                  
-                  {/* Inline Voice Error Tooltip Banner */}
-                  {voiceErrorMessage && (
-                    <div className="absolute right-0 bottom-full mb-2 z-50 w-72 p-2.5 bg-red-500 text-white rounded-xl text-[11px] font-sans leading-normal shadow-lg animate-in fade-in duration-200">
-                      <div className="font-extrabold flex items-center gap-1">
-                        <span>⚠️ Voice Typing Restriction</span>
-                      </div>
-                      <p className="mt-0.5 opacity-90">{voiceErrorMessage}</p>
-                    </div>
-                  )}
 
                   {/* AI Assistant Command Center Drawer Toggle */}
                   <button
@@ -925,32 +807,6 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
                     <Sparkles className={`w-3.5 h-3.5 ${showAiTray ? 'animate-spin' : 'animate-pulse text-amber-500'}`} />
                     <span>AI Assistant</span>
                   </button>
-
-                  {/* Hands-free Speak Mic button */}
-                  {SpeechRecognitionClass && (
-                    <button
-                      type="button"
-                      onClick={toggleListening}
-                      title={isListening ? "Stop voice typing" : "Speak to type hands-free"}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-sans text-[10px] font-bold uppercase transition-all duration-300 cursor-pointer ${
-                        isListening
-                          ? 'bg-red-500 text-white border-transparent animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.4)]'
-                          : 'bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-500 hover:text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-                      }`}
-                    >
-                      {isListening ? (
-                        <>
-                          <Mic className="w-3.5 h-3.5 text-white animate-bounce" />
-                          <span>SPEECH ACTIVE</span>
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="w-3.5 h-3.5" />
-                          <span>VOICE WRITE</span>
-                        </>
-                      )}
-                    </button>
-                  )}
 
                   {/* Full Screen Toggle button */}
                   <button
@@ -1675,14 +1531,6 @@ export function QuickNotesView({ dbState, onUpdateDb }: QuickNotesViewProps) {
                       style={{ minHeight: '350px', outline: 'none' }}
                     />
                   </div>
-
-                  {/* Subtle voice typing feedback overlay */}
-                  {isListening && (
-                    <div className="absolute bottom-6 right-6 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-mono font-bold flex items-center gap-1.5 animate-pulse shadow-md bg-white dark:bg-slate-900">
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                      Speech Active — transcribing at cursor point
-                    </div>
-                  )}
                 </div>
 
               </div>
